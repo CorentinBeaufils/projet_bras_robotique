@@ -14,7 +14,7 @@ inverse, et le bras simulé va s'y poser.)*
 
 | Phase | Contenu | État |
 |-------|---------|------|
-| **0** | Socle logiciel : lib de cinématique FK/IK, CMake, tests, CI, sanitizers, démo | ✅ Fait |
+| **0** | Socle logiciel : lib de cinématique FK/IK, CMake, tests, CI, sanitizers, démo |  Fait |
 | 1 | Perception : webcam + marqueur ArUco → position 3D | À venir |
 | 1.5 | IHM de supervision (Qt) | À venir |
 | 2+ | Bras physique, suivi temps réel, anticipation, coordination 2 bras | À venir |
