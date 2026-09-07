@@ -1,0 +1,9 @@
+{
+  "name": "projet-bras-robotique",
+  "version": "0.1.0",
+  "description": "Bras robotique a suivi + anticipation - lib de cinematique C++",
+  "dependencies": [
+    "eigen3",
+    "catch2"
+  ]
+}

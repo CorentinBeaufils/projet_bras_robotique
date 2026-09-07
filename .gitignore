@@ -1,0 +1,12 @@
+build/
+build*/
+out/
+vcpkg_installed/
+.cache/
+compile_commands.json
+*.o
+*.obj
+*.a
+.DS_Store
+.vscode/
+.idea/
