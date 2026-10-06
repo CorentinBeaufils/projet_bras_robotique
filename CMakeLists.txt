@@ -48,6 +48,40 @@ if(ENABLE_WARNINGS)
     target_compile_options(arm_demo PRIVATE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
+# --- Vision (Phase 1) : construites uniquement si OpenCV est installé ---
+find_package(OpenCV QUIET)
+if(OpenCV_FOUND)
+    message(STATUS "OpenCV ${OpenCV_VERSION} trouvé : cibles vision activées.")
+
+    foreach(vision_app camera_view aruco_detect calibrate pose_estimate)
+        add_executable(${vision_app} app/${vision_app}.cpp)
+        target_link_libraries(${vision_app} PRIVATE ${OpenCV_LIBS})
+        target_include_directories(${vision_app} SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})
+        if(ENABLE_WARNINGS)
+            target_compile_options(${vision_app} PRIVATE -Wall -Wextra)
+        endif()
+    endforeach()
+
+    # --- IHM Qt de supervision (Phase 1.5) : construite si Qt6 est présent ---
+    find_package(Qt6 QUIET COMPONENTS Widgets)
+    if(Qt6_FOUND)
+        message(STATUS "Qt ${Qt6_VERSION} trouvé : IHM de supervision activée.")
+        add_executable(qt_supervisor
+            app/qt_supervisor/main.cpp
+            app/qt_supervisor/camera_worker.cpp
+            app/qt_supervisor/camera_worker.hpp
+        )
+        set_target_properties(qt_supervisor PROPERTIES AUTOMOC ON)
+        target_link_libraries(qt_supervisor PRIVATE Qt6::Widgets ${OpenCV_LIBS})
+        target_include_directories(qt_supervisor SYSTEM PRIVATE ${OpenCV_INCLUDE_DIRS})
+    else()
+        message(STATUS "Qt6 introuvable : IHM non construite. Installe qt6-base-dev.")
+    endif()
+else()
+    message(STATUS "OpenCV introuvable : cibles vision non construites. "
+                   "Installe libopencv-dev pour la Phase 1.")
+endif()
+
 # --- Tests ---
 include(CTest)
 if(BUILD_TESTING)
