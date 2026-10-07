@@ -100,3 +100,33 @@ if(BUILD_TESTING)
     include(Catch)
     catch_discover_tests(kinematics_tests)
 endif()
+
+# --- Formatage (clang-format) ---------------------------------------------------
+# JAMAIS pendant le build : un build ne doit pas modifier les sources.
+#   cmake --build --preset vcpkg --target format        -> reformate tout le dépôt
+#   cmake --build --preset vcpkg --target format-check  -> vérifie sans rien modifier
+#                                                          (échoue si un fichier est mal formaté : pour la CI)
+find_program(CLANG_FORMAT_EXE NAMES clang-format)
+if(CLANG_FORMAT_EXE)
+    file(GLOB_RECURSE FORMAT_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/*.hpp
+    )
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT_EXE} -i --style=file ${FORMAT_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "clang-format : reformatage des sources"
+        VERBATIM
+    )
+    add_custom_target(format-check
+        COMMAND ${CLANG_FORMAT_EXE} --dry-run --Werror --style=file ${FORMAT_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "clang-format : verification du formatage"
+        VERBATIM
+    )
+else()
+    message(STATUS "clang-format introuvable : cibles format / format-check non créées.")
+endif()

@@ -7,6 +7,7 @@
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/objdetect/aruco_detector.hpp>
 
 int main(int argc, char** argv) {
     const int cam_index = (argc > 1) ? std::stoi(argv[1]) : 0;

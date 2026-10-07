@@ -1,0 +1,32 @@
+# Style du projet projet_bras_robotique.
+# Utilisé par l'IDE (format à l'enregistrement) et par les cibles CMake `format` / `format-check`.
+BasedOnStyle: Google
+Language: Cpp
+Standard: c++20
+
+# Indentation et largeur
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+AccessModifierOffset: -4          # `public:` / `signals:` alignés sur `class`
+NamespaceIndentation: None
+
+# Pointeurs et références collés au type : `cv::Mat& image`, `QObject* parent`
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Lignes courtes
+AllowShortFunctionsOnASingleLine: Inline   # garde `void stop() { running_ = false; }` dans une classe
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+
+# Includes : on garde les groupes (std / bibliothèques / projet), triés dans chaque groupe
+IncludeBlocks: Preserve
+SortIncludes: CaseSensitive
+
+# Commentaires de fin de namespace : `}  // namespace kin`
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 2
