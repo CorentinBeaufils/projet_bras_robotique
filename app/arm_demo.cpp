@@ -72,8 +72,12 @@ int main(int argc, char** argv) {
     const double scale = (kImg * 0.42) / reach;
     const double base_px = kImg * 0.15;
     const double base_py = kImg * 0.5;
-    auto to_px_x = [&](double x) { return base_px + x * scale; };
-    auto to_px_y = [&](double y) { return base_py - y * scale; };  // flip vertical
+    auto to_px_x = [&](double x) {
+        return base_px + x * scale;
+    };
+    auto to_px_y = [&](double y) {
+        return base_py - y * scale;
+    };  // flip vertical
 
     // Construit, pour chaque articulation animée, la liste de valeurs SMIL "v0;v1;...".
     std::ostringstream j1x, j1y, j2x, j2y;  // coude (j1) et effecteur (j2)
@@ -97,7 +101,8 @@ int main(int argc, char** argv) {
         return 1;
     }
     const std::string dur = "2.4s";
-    const std::string anim = "\" dur=\"" + dur + "\" repeatCount=\"indefinite\" calcMode=\"linear\"/>";
+    const std::string anim =
+        "\" dur=\"" + dur + "\" repeatCount=\"indefinite\" calcMode=\"linear\"/>";
 
     svg << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" << kImg << "\" height=\"" << kImg
         << "\" viewBox=\"0 0 " << kImg << " " << kImg << "\">\n";
@@ -108,33 +113,38 @@ int main(int argc, char** argv) {
     // Cible.
     svg << "  <circle cx=\"" << to_px_x(target_x) << "\" cy=\"" << to_px_y(target_y)
         << "\" r=\"7\" fill=\"none\" stroke=\"#ff5d5d\" stroke-width=\"2\"/>\n";
-    svg << "  <line x1=\"" << to_px_x(target_x) - 10 << "\" y1=\"" << to_px_y(target_y) << "\" x2=\""
-        << to_px_x(target_x) + 10 << "\" y2=\"" << to_px_y(target_y)
+    svg << "  <line x1=\"" << to_px_x(target_x) - 10 << "\" y1=\"" << to_px_y(target_y)
+        << "\" x2=\"" << to_px_x(target_x) + 10 << "\" y2=\"" << to_px_y(target_y)
         << "\" stroke=\"#ff5d5d\" stroke-width=\"1.5\"/>\n";
-    svg << "  <line x1=\"" << to_px_x(target_x) << "\" y1=\"" << to_px_y(target_y) - 10 << "\" x2=\""
-        << to_px_x(target_x) << "\" y2=\"" << to_px_y(target_y) + 10
+    svg << "  <line x1=\"" << to_px_x(target_x) << "\" y1=\"" << to_px_y(target_y) - 10
+        << "\" x2=\"" << to_px_x(target_x) << "\" y2=\"" << to_px_y(target_y) + 10
         << "\" stroke=\"#ff5d5d\" stroke-width=\"1.5\"/>\n";
     // Segment 1 : base (fixe) -> coude (animé).
     svg << "  <line x1=\"" << base_px << "\" y1=\"" << base_py << "\" x2=\"" << to_px_x(0)
-        << "\" y2=\"" << to_px_y(0) << "\" stroke=\"#4da3ff\" stroke-width=\"6\" stroke-linecap=\"round\">\n";
+        << "\" y2=\"" << to_px_y(0)
+        << "\" stroke=\"#4da3ff\" stroke-width=\"6\" stroke-linecap=\"round\">\n";
     svg << "    <animate attributeName=\"x2\" values=\"" << j1x.str() << anim << "\n";
     svg << "    <animate attributeName=\"y2\" values=\"" << j1y.str() << anim << "\n";
     svg << "  </line>\n";
     // Segment 2 : coude (animé) -> effecteur (animé).
     svg << "  <line x1=\"" << to_px_x(0) << "\" y1=\"" << to_px_y(0) << "\" x2=\"" << to_px_x(0)
-        << "\" y2=\"" << to_px_y(0) << "\" stroke=\"#7ee081\" stroke-width=\"6\" stroke-linecap=\"round\">\n";
+        << "\" y2=\"" << to_px_y(0)
+        << "\" stroke=\"#7ee081\" stroke-width=\"6\" stroke-linecap=\"round\">\n";
     svg << "    <animate attributeName=\"x1\" values=\"" << j1x.str() << anim << "\n";
     svg << "    <animate attributeName=\"y1\" values=\"" << j1y.str() << anim << "\n";
     svg << "    <animate attributeName=\"x2\" values=\"" << j2x.str() << anim << "\n";
     svg << "    <animate attributeName=\"y2\" values=\"" << j2y.str() << anim << "\n";
     svg << "  </line>\n";
     // Articulations.
-    svg << "  <circle cx=\"" << base_px << "\" cy=\"" << base_py << "\" r=\"6\" fill=\"#e8eef5\"/>\n";
-    svg << "  <circle cx=\"" << to_px_x(0) << "\" cy=\"" << to_px_y(0) << "\" r=\"5\" fill=\"#e8eef5\">\n";
+    svg << "  <circle cx=\"" << base_px << "\" cy=\"" << base_py
+        << "\" r=\"6\" fill=\"#e8eef5\"/>\n";
+    svg << "  <circle cx=\"" << to_px_x(0) << "\" cy=\"" << to_px_y(0)
+        << "\" r=\"5\" fill=\"#e8eef5\">\n";
     svg << "    <animate attributeName=\"cx\" values=\"" << j1x.str() << anim << "\n";
     svg << "    <animate attributeName=\"cy\" values=\"" << j1y.str() << anim << "\n";
     svg << "  </circle>\n";
-    svg << "  <circle cx=\"" << to_px_x(0) << "\" cy=\"" << to_px_y(0) << "\" r=\"5\" fill=\"#ffd166\">\n";
+    svg << "  <circle cx=\"" << to_px_x(0) << "\" cy=\"" << to_px_y(0)
+        << "\" r=\"5\" fill=\"#ffd166\">\n";
     svg << "    <animate attributeName=\"cx\" values=\"" << j2x.str() << anim << "\n";
     svg << "    <animate attributeName=\"cy\" values=\"" << j2y.str() << anim << "\n";
     svg << "  </circle>\n";

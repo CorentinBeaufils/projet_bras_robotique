@@ -27,7 +27,7 @@ public:
     void setPaused(bool paused) { paused_ = paused; }
     void triggerEmergencyStop() { emergency_stop_ = true; }  // verrouillé...
     void resetEmergencyStop() { emergency_stop_ = false; }   // ...jusqu'au réarmement
-    void frameDisplayed() { frame_in_flight_ = false; }       // la GUI a fini l'image
+    void frameDisplayed() { frame_in_flight_ = false; }      // la GUI a fini l'image
 
 public slots:
     void process();  // boucle capture + détection (lancée au démarrage du thread)
