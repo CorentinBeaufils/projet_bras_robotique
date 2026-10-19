@@ -43,7 +43,6 @@ struct PlanarArm {
 /// Précondition : angles.size() == arm.dof().
 ///
 /// À IMPLÉMENTER (Phase 0) : chaîne les link_transform() puis lit la pose finale.
-[[nodiscard]] Pose2D forward_kinematics(const PlanarArm& arm,
-                                        const std::vector<double>& angles);
+[[nodiscard]] Pose2D forward_kinematics(const PlanarArm& arm, const std::vector<double>& angles);
 
 }  // namespace kin

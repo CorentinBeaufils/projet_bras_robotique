@@ -70,20 +70,21 @@ int main() {
 
         // ================= TODO (marche C-1) : détection des coins =================
         // 1. cv::findChessboardCorners(gray, pattern, corners, ...) -> renvoie un bool.
-        // 2. Si trouvé, affine la précision au sous-pixel avec cv::cornerSubPix(gray, corners, ...).
+        // 2. Si trouvé, affine la précision au sous-pixel avec cv::cornerSubPix(gray, corners,
+        // ...).
         // 3. Superpose le résultat avec cv::drawChessboardCorners(frame, pattern, corners, found).
         // Mets `found` à true quand des coins sont détectés.
         // ==========================================================================
-        found = cv::findChessboardCorners(gray, pattern, corners,
-                                          cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE);
+        found = cv::findChessboardCorners(
+            gray, pattern, corners, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE);
         if (found) {
-            cv::cornerSubPix(gray, corners, cv::Size(5, 5), cv::Size(-1, -1),
-                             cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001));
+            cv::cornerSubPix(
+                gray, corners, cv::Size(5, 5), cv::Size(-1, -1),
+                cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001));
             cv::drawChessboardCorners(frame, pattern, corners, found);
         }
         cv::putText(frame, "vues capturees : " + std::to_string(object_points.size()),
-                    cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.9,
-                    cv::Scalar(0, 255, 0), 2);
+                    cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
         cv::imshow("Phase 1 - Marche C : calibration", frame);
 
         const int key = cv::waitKey(1);

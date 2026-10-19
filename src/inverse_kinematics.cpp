@@ -1,12 +1,12 @@
 #include "kinematics/inverse_kinematics.hpp"
 
-#include <cmath>     // std::sqrt, std::acos, std::atan2, std::sin, std::cos
-#include <algorithm> // std::clamp
+#include <algorithm>  // std::clamp
+#include <cmath>      // std::sqrt, std::acos, std::atan2, std::sin, std::cos
 
 namespace kin {
 
-std::optional<IkSolution> inverse_kinematics_2link(double l1, double l2, double x,
-                                                   double y, Elbow elbow) {
+std::optional<IkSolution> inverse_kinematics_2link(double l1, double l2, double x, double y,
+                                                   Elbow elbow) {
     // TODO(phase0) : IK analytique 2 segments.
     //   1. d = distance base->cible. Si hors de la couronne |l1-l2| <= d <= l1+l2,
     //      renvoie std::nullopt.
@@ -18,7 +18,7 @@ std::optional<IkSolution> inverse_kinematics_2link(double l1, double l2, double 
     //   flottantes peuvent pousser l'argument de acos très légèrement hors de
     //   [-1, 1] -> acos renvoie NaN. Comment tu t'en protèges proprement ?
 
-    const double diff_L = l1-l2;
+    const double diff_L = l1 - l2;
     const double min_dist = diff_L * diff_L;
 
     const double sum_L = l1 + l2;
@@ -30,8 +30,9 @@ std::optional<IkSolution> inverse_kinematics_2link(double l1, double l2, double 
         return std::nullopt;
     }
 
-    double theta_2 = std::acos(std::clamp((target_dist_sq - l1 * l1 - l2 * l2) / (2 * l1 * l2), -1.0, 1.0));
-    
+    double theta_2 =
+        std::acos(std::clamp((target_dist_sq - l1 * l1 - l2 * l2) / (2 * l1 * l2), -1.0, 1.0));
+
     if (elbow == Elbow::Down) {
         theta_2 = -theta_2;
     }
@@ -41,7 +42,6 @@ std::optional<IkSolution> inverse_kinematics_2link(double l1, double l2, double 
     const double theta_1 = std::atan2(y, x) - std::atan2(k2, k1);
 
     return IkSolution{theta_1, theta_2};
-
 }
 
 }  // namespace kin

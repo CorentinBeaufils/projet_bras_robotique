@@ -1,7 +1,7 @@
 #include "kinematics/planar_arm.hpp"
 
-#include <stdexcept>
 #include <cmath>
+#include <stdexcept>
 
 namespace kin {
 
@@ -12,17 +12,10 @@ Eigen::Matrix3d link_transform(double theta, double length) {
     //   - la dernière ligne (0 0 1).
     // Remplace l'identité ci-dessous par la vraie construction.
 
-    const Eigen::Matrix3d matRota ({
-        {std::cos(theta), -std::sin(theta), 0},
-        {std::sin(theta),  std::cos(theta), 0},
-        {0,           0,          1}
-    });
+    const Eigen::Matrix3d matRota(
+        {{std::cos(theta), -std::sin(theta), 0}, {std::sin(theta), std::cos(theta), 0}, {0, 0, 1}});
 
-    const Eigen::Matrix3d  matTrans ({
-        {1, 0, length},
-        {0, 1, 0},
-        {0, 0, 1}
-    });
+    const Eigen::Matrix3d matTrans({{1, 0, length}, {0, 1, 0}, {0, 0, 1}});
 
     return matRota * matTrans;
 }

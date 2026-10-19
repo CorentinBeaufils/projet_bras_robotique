@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QObject>
 
+#include "perception/markers.hpp"
 #include "perception_types.hpp"
 
 // Capture + perception dans un thread SÉPARÉ de la GUI.
@@ -20,7 +21,8 @@ class CameraWorker : public QObject {
     Q_OBJECT
 
 public:
-    explicit CameraWorker(int cam_index = 0, QObject* parent = nullptr);
+    explicit CameraWorker(perception::CameraIntrinsics intrinsics, int cam_index = 0,
+                          QObject* parent = nullptr);
 
     // --- Commandes appelables depuis N'IMPORTE QUEL thread (atomiques uniquement) ---
     void stop() { running_ = false; }
@@ -37,9 +39,11 @@ signals:
     void frameReady(const QImage& image, qint64 capture_ns);
     void poseReady(const MarkerPose& pose);
     void telemetryReady(const Telemetry& telemetry);
+    void errorOccurred(const QString& message);
     void finished();
 
 private:
+    perception::CameraIntrinsics intrinsics_;
     int cam_index_;
     std::atomic<bool> running_{true};
     std::atomic<bool> paused_{false};

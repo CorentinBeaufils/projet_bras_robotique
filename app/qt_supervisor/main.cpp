@@ -15,6 +15,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QLayout>
+#include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
 #include <QSizePolicy>
@@ -24,10 +25,18 @@
 #include <QWidget>
 
 #include "camera_worker.hpp"
+#include "perception/markers.hpp"
 #include "perception_types.hpp"
 
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
+
+    auto intrinsics = perception::load_intrinsics("camera_intrinsics.yml");
+    if (!intrinsics) {
+        QMessageBox::critical(nullptr, "Erreur",
+                              "camera_intrinsics.yml introuvable : lance calibrate.");
+        return 1;
+    }
 
     bool slow_gui = false;
     for (int i = 1; i < argc; ++i) {
@@ -98,17 +107,23 @@ int main(int argc, char** argv) {
     window->show();
 
     // ------------------------------ Thread worker -------------------------------
-    auto* thread = new QThread;
-    auto* worker = new CameraWorker(0);
-    worker->moveToThread(thread);
-    QObject::connect(thread, &QThread::started, worker, &CameraWorker::process);
+    QThread thread;
+    CameraWorker worker(*intrinsics, 0);
+    worker.moveToThread(&thread);
+    QObject::connect(&thread, &QThread::started, &worker, &CameraWorker::process);
 
     // ------------------- Worker -> GUI : signaux (queued) ------------------------
     double last_latency_ms = 0.0;  // n'est touché QUE sur le thread GUI
 
+    QObject::connect(&worker, &CameraWorker::errorOccurred, window,
+                     [window](const QString& message) {
+                         QMessageBox::critical(window, "Erreur caméra", message);
+                         qApp->exit(1);
+                     });
+
     QObject::connect(
-        worker, &CameraWorker::frameReady, video,
-        [video, worker, slow_gui, &last_latency_ms](const QImage& img, qint64 capture_ns) {
+        &worker, &CameraWorker::frameReady, video,
+        [video, &worker, slow_gui, &last_latency_ms](const QImage& img, qint64 capture_ns) {
             if (slow_gui) {
                 QThread::msleep(50);  // simulation d'une GUI lente (test uniquement)
             }
@@ -117,12 +132,11 @@ int main(int argc, char** argv) {
                                       std::chrono::steady_clock::now().time_since_epoch())
                                       .count();
             last_latency_ms = static_cast<double>(now_ns - capture_ns) / 1e6;
-            worker
-                ->frameDisplayed();  // atomique : signale au worker qu'il peut envoyer la suivante
+            worker.frameDisplayed();  // atomique : signale au worker qu'il peut envoyer la suivante
         });
 
     QObject::connect(
-        worker, &CameraWorker::poseReady, pose_label, [pose_label](const MarkerPose& p) {
+        &worker, &CameraWorker::poseReady, pose_label, [pose_label](const MarkerPose& p) {
             if (!p.visible) {
                 pose_label->setText("Aucun marqueur");
                 return;
@@ -136,7 +150,7 @@ int main(int argc, char** argv) {
                                     .arg(d, 0, 'f', 3));
         });
 
-    QObject::connect(worker, &CameraWorker::telemetryReady, telemetry_label,
+    QObject::connect(&worker, &CameraWorker::telemetryReady, telemetry_label,
                      [telemetry_label, &last_latency_ms](const Telemetry& t) {
                          QString state = "EN MARCHE";
                          if (t.emergency_stop) {
@@ -158,31 +172,28 @@ int main(int argc, char** argv) {
     // Le contexte de ces lambdas est un bouton (thread GUI) : elles s'exécutent donc sur le
     // thread GUI, immédiatement, sans passer par la file d'événements du worker.
     QObject::connect(pause_button, &QPushButton::toggled, pause_button,
-                     [worker, pause_button](bool on) {
-                         worker->setPaused(on);
+                     [&worker, pause_button](bool on) {
+                         worker.setPaused(on);
                          pause_button->setText(on ? "Reprendre" : "Pause");
                      });
 
-    QObject::connect(estop_button, &QPushButton::clicked, estop_button, [worker, reset_button]() {
-        worker->triggerEmergencyStop();  // effet immédiat, verrouillé
+    QObject::connect(estop_button, &QPushButton::clicked, estop_button, [&worker, reset_button]() {
+        worker.triggerEmergencyStop();  // effet immédiat, verrouillé
         reset_button->setEnabled(true);
     });
 
-    QObject::connect(reset_button, &QPushButton::clicked, reset_button, [worker, reset_button]() {
-        worker->resetEmergencyStop();  // réarmement volontaire, seul moyen de lever l'arrêt
+    QObject::connect(reset_button, &QPushButton::clicked, reset_button, [&worker, reset_button]() {
+        worker.resetEmergencyStop();  // réarmement volontaire, seul moyen de lever l'arrêt
         reset_button->setEnabled(false);
     });
 
     // ------------------------------ Cycle de vie --------------------------------
-    QObject::connect(worker, &CameraWorker::finished, thread, &QThread::quit);
-    QObject::connect(thread, &QThread::finished, worker, &QObject::deleteLater);
-    QObject::connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-
-    thread->start();
+    QObject::connect(&worker, &CameraWorker::finished, &thread, &QThread::quit);
+    thread.start();
     const int rc = app.exec();
 
-    worker->stop();
-    thread->quit();
-    thread->wait();
+    worker.stop();
+    thread.quit();
+    thread.wait();
     return rc;
 }
