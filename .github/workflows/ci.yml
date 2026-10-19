@@ -1,0 +1,45 @@
+# CI : construit et teste la lib de cinématique, vérifie le formatage.
+# Dépendances : paquets Ubuntu (Eigen, Catch2). OpenCV et Qt ne sont PAS installés :
+# CMake ignore alors les cibles vision, IHM et perception_tests.
+# Dette : image avec OpenCV >= 4.7 + Qt 6 pour compiler et tester aussi la perception.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  build-test:
+    name: Build + tests (${{ matrix.config.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: "Debug", flags: "-DCMAKE_BUILD_TYPE=Debug" }
+          - { name: "ASan+UBSan", flags: "-DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dépendances
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build libeigen3-dev catch2
+      - name: Configure
+        run: cmake -S . -B build -G Ninja ${{ matrix.config.flags }}
+      - name: Build
+        run: cmake --build build
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérification du formatage
+        run: |
+          clang-format --version
+          find include src tests app \( -name '*.cpp' -o -name '*.hpp' \) -print0 \
+            | xargs -0 clang-format --dry-run --Werror --style=file
