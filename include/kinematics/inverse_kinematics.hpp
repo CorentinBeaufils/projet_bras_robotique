@@ -23,7 +23,7 @@ struct IkSolution {
 ///           où d = distance base->cible.
 ///
 /// À IMPLÉMENTER (Phase 0).
-[[nodiscard]] std::optional<IkSolution> inverse_kinematics_2link(
-    double l1, double l2, double x, double y, Elbow elbow);
+[[nodiscard]] std::optional<IkSolution> inverse_kinematics_2link(double l1, double l2, double x,
+                                                                 double y, Elbow elbow);
 
 }  // namespace kin

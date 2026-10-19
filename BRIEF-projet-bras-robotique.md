@@ -248,22 +248,71 @@ recruteur C++/robotique.
 
 > *(À mettre à jour à chaque session.)*
 
-- **Phase en cours** : Phase 1 (perception) — à démarrer. **Phase 0 terminée.**
+- **Phase en cours** : Phase 2 (un bras physique, cible statique) — **étape 2.0 : solder la
+  dette**. Phases 0, 1 et 1.5 terminées et taguées **`v0.2.0`**.
 - **Fait** :
-  - périmètre défini (ce document) ;
-  - **Phase 0 bouclée** : lib `kinematics` C++20 — FK (bras plan N segments, chaîne de
-    matrices homogènes / Eigen) + IK analytique 2 segments (loi des cosinus + atan2,
-    coude haut/bas, couronne atteignable via `std::optional`) ;
-  - dépôt CMake + vcpkg (Eigen, Catch2), **11 tests** verts (dont IK testée par
-    aller-retour FK∘IK), CI GitHub Actions, `-Werror`, ASan/UBSan ;
-  - démo `arm_demo` (SVG animé, viz maison C++) + **GIF de démo dans le README** ;
-  - jalon tagué **v0.1.0**.
-- **Prochain pas concret** : Phase 1 — calibration de la webcam **intégrée** (intrinsèques,
-  mire échiquier) + détection **ArUco** → estimation et affichage de la **position 3D**,
-  fenêtre OpenCV brute. L'IHM Qt vient en Phase 1.5, après la perception.
+  - **Phase 0** : lib `kinematics` C++20 — FK (bras plan N segments, matrices homogènes /
+    Eigen) + IK analytique 2 segments (loi des cosinus + atan2, coude haut/bas, couronne
+    atteignable via `std::optional`) ; tests Catch2 (IK testée par aller-retour FK∘IK),
+    `-Werror`, ASan/UBSan ; démo `arm_demo` (SVG animé) + GIF dans le README.
+  - **Phase 1** : calibration webcam intégrée (mire 9×6, `cornerSubPix`, reprojection
+    0,19 px) ; détection ArUco ; pose 3D par `solvePnP` (`IPPE_SQUARE`), distance validée
+    au réglet à 30 et 60 cm. Bug d'échelle diagnostiqué et corrigé : la taille du marqueur
+    est le **côté extérieur complet** du carré noir.
+  - **Lib `perception`** : `load_intrinsics`, `estimate_marker_pose`, `MarkerDetector`
+    (détection + pose, observations sans pose conservées). 7 tests dont un `detect()` sur
+    image synthétique (z attendu = f·L/s) ; tests validés par mutation (3 sabotages
+    détectés). `pose_estimate` et `qt_supervisor` l'utilisent : plus aucun `solvePnP` ni
+    lecture de YAML dans `app/`.
+  - **Phase 1.5** : IHM Qt — worker de perception dans un `QThread`, signaux *queued*
+    worker → GUI (copie profonde `cv::Mat` → `QImage`, `qRegisterMetaType`), commandes
+    GUI → worker par `std::atomic` (pause, arrêt d'urgence verrouillé + réarmement),
+    « une seule image en vol » par `atomic::exchange` : latence bornée à 58 ms contre
+    1,7 s et croissante sans la garde (mesuré avec `--slow-gui`).
+  - **Robustesse IHM** : intrinsèques chargées dans `main()` et injectées dans le worker ;
+    erreur caméra remontée par signal → boîte de dialogue → sortie code 1 (*fail-safe*) ;
+    thread et worker en **RAII** sur la pile (corrige un *use-after-free* trouvé par ASan
+    sur le chemin « caméra absente », dû à des `deleteLater` prématurés).
+  - Outillage : OpenCV 4.10 (API `ArucoDetector`), `.clang-format` + cibles `format` /
+    `format-check`, `-Wpedantic -Werror` sur **toutes** les cibles, git, CI GitHub Actions
+    (build Debug + ASan/UBSan + vérification du formatage).
+- **Corrections d'historique** : le tag `v0.1.0` annoncé en Phase 0 n'a jamais existé (pas
+  de git à l'époque) ; `v0.2.0` est le premier tag réel.
+- **Étape 2.0 — dette à solder avant de toucher au matériel** :
+  - CI : image avec OpenCV ≥ 4.7 + Qt 6 pour compiler et tester `perception` (aujourd'hui
+    ignorée en CI) ; exiger `find_package(OpenCV 4.7)` pour qu'un OpenCV trop ancien soit
+    ignoré au lieu de casser le build ;
+  - lib `perception_viz` : `draw_observations(...)`, aujourd'hui copiée dans
+    `pose_estimate` et `qt_supervisor` ;
+  - configuration de scène (`config/scene.yml` ou argument) pour la taille du marqueur,
+    aujourd'hui en dur dans deux fichiers — **pas** dans `camera_intrinsics.yml`, réécrit à
+    chaque calibration ;
+  - `.clang-tidy` + cible `tidy` (règles `bugprone`, `cppcoreguidelines`, `modernize`,
+    `performance`, `readability`) ;
+  - argument `--cam N` pour `qt_supervisor` (tester le chemin d'erreur sans modifier le
+    code) ;
+  - IHM : vidéo redimensionnable en gardant le ratio (plus de taille fixe 640×480).
+- **Exigences de sûreté pour la Phase 2** (issues de la revue de la Phase 1.5) :
+  - **arrêt d'urgence matériel direct** (coupure de l'alimentation des actionneurs) qui ne
+    passe ni par le PC ni par l'application ; l'arrêt logiciel de l'IHM le complète, il ne
+    le remplace pas ;
+  - l'arrêt d'urgence logiciel ne doit **pas** vivre dans le worker caméra : il doit
+    fonctionner même si la perception est morte ;
+  - la commande du bras ne dépend pas de l'affichage : pose publiée à chaque image dans
+    une « boîte aux lettres » (dernière valeur), horodatée ; au-delà d'un âge maximal, la
+    pose est périmée et le bras s'arrête (*watchdog*, aussi côté MCU sur perte du lien).
+- **Prochain pas concret** : étape 2.0 (dette), puis **2.1 — cinématique 3D** : base
+  tournante (lacet = `atan2(y, x)`) + chaîne plane existante, FK/IK 3D testées par
+  aller-retour, puis simulation d'un design de bras open source avec ses vraies longueurs.
+  Aucun achat avant que la simulation ait validé l'espace de travail.
 - **Décisions prises** : caméra = webcam PC (intégrée puis USB trépied), pas l'ESP32-CAM ;
-  IHM en Qt (composant assumé, construite après la perception) ; **premier bras 3 DOF
-  planaire** ; **viz C++ maison** (SVG animé) plutôt que PyBullet ; **vcpkg + Catch2**.
+  IHM en Qt ; viz C++ maison ; vcpkg pour Eigen et Catch2 ; **OpenCV ≥ 4.7 et Qt 6 par le
+  système** ; pose par `solvePnP` ; commandes GUI → worker par atomiques ; politique
+  « dernière image gagne » pour l'affichage ; dessin hors des libs de calcul ; IHM fermée
+  sur erreur fatale (*fail-safe*).
+- **Décisions ouvertes (Phase 2)** : design de bras open source ; actionneurs (servos
+  hobby / servos série à retour de position / pas-à-pas) ; MCU (ESP32 ou STM32) ; liaison
+  PC ↔ MCU (UDP Wi-Fi ou série USB) ; budget.
 - **Blocages** : —
 
 ---
