@@ -22,6 +22,7 @@ find_package(Eigen3 CONFIG REQUIRED)
 add_library(kinematics
     src/planar_arm.cpp
     src/inverse_kinematics.cpp
+    src/arm_4dof.cpp
 )
 target_include_directories(kinematics PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -102,6 +103,7 @@ if(BUILD_TESTING)
     add_executable(kinematics_tests
         tests/test_planar_arm.cpp
         tests/test_inverse_kinematics.cpp
+        tests/test_arm_4dof.cpp
     )
     target_link_libraries(kinematics_tests PRIVATE kinematics Catch2::Catch2WithMain)
 
